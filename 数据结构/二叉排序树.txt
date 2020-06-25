@@ -1,0 +1,272 @@
+#include<stdio.h>                                  //头文件 
+#include<stdlib.h> 
+#include<string.h>
+
+
+typedef char keytype;                        
+typedef struct node                                //定义结构体类型 
+{ 
+	keytype *key;                                  //数据域 
+	int weight;                                    //权重 
+	struct node *lchild,*rchild;                   //左右孩子指针 
+}bstnode;                                   
+
+
+bstnode*INSERTBST(bstnode*t,bstnode*s)             //二叉排序树的（非递归）插入   返回根节点  已知（根节点，插入节点） 
+{
+	bstnode*f,*p;
+	p=t;                                           //p指向根节点 
+	while(p!=NULL)                                 //遍历树，直至找到相同单词或p为NULL 
+	{
+		f=p;                                       //f指向p的双亲（当未找到相同单词） 
+		if(strcmp(s->key,p->key)==0)               //单词相同频次加1 
+		{
+			p->weight=p->weight+1;                 
+			return t;
+		} 
+		if(strcmp(s->key,p->key)<0)  p=p->lchild;  //查找左子树 
+		else  p=p->rchild;                         //查找右子树 
+	}
+	if(t==NULL)  return s;                         //原树为空，返回s为根节点 
+	if(strcmp(s->key,f->key)<0)  f->lchild=s;      //s插入为f的左孩子 
+	else  f->rchild=s;                             //s插入为f的右孩子
+	return t;
+}
+
+
+bstnode*CREATEBST()                                //读取文件并建立二叉排序树   返回根节点 
+{
+	bstnode *t,*s;
+	long int i,j=0;
+	char ch,string[2000000];                       //声明总单词字符串长度 
+	FILE*fp;
+	fp=fopen("D:/工具/创建的文件/0.txt","r");      //读取文件 
+    do                                             //去除非字母字符并将大写字母转换为小写字母 
+	{
+	    i=20*j;                                    //使每个单词首字母间隔20 
+		while(1)
+		{
+			ch=fgetc(fp);                          //逐个读取字符 
+	        if(ch>='a'&&ch<='z')                   //小写字母直接插入 
+			{ 
+			    string[i]=ch;
+			    i++;
+			}
+	        else if(ch>='A'&&ch<='Z')              //大写字母转化为小写字母后插入 
+			{
+			    string[i]=ch+32;                    
+			    i++;
+			}
+	        else break;                            //如果读入非字母字符,单词输入结束跳出循环 
+	    }
+		string[i]='\0';                            //在每个单词后加'\0' 
+		if(string[j*20]!='\0') j++;                //没有单词输入保留原位不变 
+	}
+	while(ch!=EOF);                                //读取结束跳出循环 
+	keytype *key=string;                           //key指向string[0] 
+	t=NULL;                                        //令t为NULL 
+	while(*key!='\0')                              //建立二叉树   插入所有单词
+	{
+		s=(bstnode*)malloc(sizeof(bstnode));       //建立新节点 
+		s->lchild=s->rchild=NULL;                  //另新节点左右孩子为空 
+		s->key=key;                                //新节点赋值 
+		s->weight=1;                               //初始权重为1 
+		t=INSERTBST(t,s);                          //把新节点插入到树中 
+		key=key+20;                                //令key指向下一个单词首字母 
+	}
+	return t;                                      //返回根节点 
+ } 
+
+
+bstnode*Search(bstnode*t,char*word)                //二叉排序树的查找  返回所查找单词节点  已知(根节点,单词数组) 
+{                         
+	bstnode*p;
+	p=t;                                           //令p指向根节点                                   
+	while(p!=NULL)                                 //遍历整个树 
+	{
+		if(strcmp(word,p->key)==0)  break;         //查找正确，跳出循环 
+		else if(strcmp(word,p->key)<0) p=p->lchild;//小于根节点令P指向其左孩子 
+		else  p=p->rchild;                         //大于根节点令P指向其右孩子
+	}
+	return p;                                      //返回查找到的地址 
+} 
+
+
+void PutSearch(bstnode*t,char*word)                //输出查找的单词和频次    已知（根节点,单词数组） 
+{
+    bstnode*p;
+	p=Search(t,word);                              //查找所需单词节点
+	if(p!=NULL) printf("%s %d\n",p->key,p->weight);//查找成功输出单词和频次 
+	else printf("There is not the word.\n");       //查找不成功输出未查到 
+ } 
+ 
+ 
+void inorder(bstnode*t)                            //中序遍历输出   已知（根节点） 
+{
+	if(t!=NULL)                                    //根节点不为NULL进行操作 
+	{   
+	    inorder(t->lchild);                        //中序遍历左子树 
+		printf("%s %d %p\n",t->key,t->weight,t->key);//输出节点的单词频次和地址 
+        inorder(t->rchild);                        //中序遍历右子树 
+	}
+} 
+ 
+  
+bstnode*FindP(bstnode*t,bstnode*s)                 //遍历查找任意节点的双亲节点  返回这个节点的双亲节点  已知（根节点，查找节点） 
+{
+	bstnode*m,*temp=NULL;                           //temp为标识符（判断是否查找成功） 
+	m=t;                                            //m指向根节点 
+	if(t==NULL) return NULL;                        //根节点位NULL  返回NULL 
+	if(t==s) return NULL;                           //查找节点为根节点  返回NULL 
+	if(m->lchild==s||m->rchild==s) return m;        //子节点为查找值  返回地址 
+	else 
+	{
+		if(temp=FindP(m->lchild,s))  return temp;   //遍历左子树 ,未找到返回NULL 
+     	if(temp=FindP(m->rchild,s))  return temp;   //遍历右子树 未找到返回NULL
+	}
+}
+
+
+int LorR(bstnode*p,bstnode*s)                       //判断子节点为左孩子还是右孩子       
+{
+	if(p->lchild==s)  return 1;                     //左返回1
+	else return 2;                                  //右返回2
+ } 
+  
+  
+bstnode*Max(bstnode*t)                              //查找二叉排序树中的最大节点(递归）  返回最大节点  已知（根节点） 
+{
+	if(t->rchild!=NULL) Max(t->rchild);             //右子树不为NULL，遍历右子树 
+	else return t;                                  //返回最大节点 
+ } 
+
+
+bstnode*Deletenode(bstnode*t,bstnode*s)             //删除停用词节点（遍历）    返回根节点    已知（根节点，删除节点） 
+{
+	int d;
+	bstnode*p,*m;                       
+	if(s==NULL);                                    //删除节点在二叉排序树中不存在，直接返回根节点 
+	else
+	{
+		p=FindP(t,s);                               //查找停用词节点的双亲节点                 
+	    if(s->lchild==NULL&&s->rchild==NULL)        //s为叶子节点 
+	    {
+	    	if(p==NULL) free(s);                    //s为根节点，直接释放 
+	    	else
+	    	{
+	    		d=LorR(p,s);                        //判断S为P的左孩子还是右孩子 
+	    		if(d==1)                            //左孩子 
+				{
+					p->lchild=NULL;                 //将其双亲节点左孩子指针置空 
+					free(s);                        //释放S节点 
+				 } 
+				 if(d==2)                           //右孩子 
+				 {
+				 	p->rchild=NULL;                 //将其双亲节点孩子指针置空
+				 	free(s);                        //释放S节点
+				 }
+			}
+		}
+	    else if(s->lchild!=NULL&&s->rchild==NULL)    //s仅有左子树 
+	    {
+	    	if(p==NULL)                              //s为根结点 
+			{
+				free(s);                           
+				return s->lchild;                    //返回s的左孩子节点 
+			 } 
+			else
+			{
+				d=LorR(p,s);                         //判断S为P的左孩子还是右孩子
+			    if(d==1)                             //左孩子
+			    {
+			     	p->lchild=s->lchild;             //将S的左孩子成为p的左孩子 
+			        free(s);                         //释放S节点 
+			    } 
+			    if(d==2)                             //右孩子
+			    {
+				    p->rchild=s->lchild;             //将S的左孩子成为p的右孩子
+				    free(s);                         //释放S节点 
+			    }
+			}
+	    
+		}
+	    else if(s->lchild==NULL&&s->rchild!=NULL)    //s仅有右子树 
+	    {
+	    	if(p==NULL)                              //s为根结点
+			{
+				free(s);
+				return s->rchild;                    //返回s的右孩子节点 
+			 } 
+			else
+			{
+			    d=LorR(p,s);                         //判断S为P的左孩子还是右孩子
+			    if(d==1)                             //左孩子
+			    {
+				    p->lchild=s->rchild;             //将S的右孩子成为p的左孩子
+				    free(s);                         //释放S节点 
+			    } 
+			    if(d==2)                             //右孩子
+			    {
+			     	p->rchild=s->rchild;             //将S的右孩子成为p的右孩子
+				    free(s);                         //释放S节点 
+			    }
+			 } 
+
+		}
+	    else if(s->lchild!=NULL&&s->rchild!=NULL)    //s既有左子树又有子树 
+        {
+        	m=Max(s->lchild);                        //中序遍历查找s左子树最大节点 
+        	s->key=m->key;                           //以最大节点代替删除节点 
+        	s->weight=m->weight;
+        	Deletenode(s,m);                         //删除最大节点 
+		}
+    }
+    return t;
+ } 
+  
+   
+int main()
+{
+	char e[]={"end"},word[20];                          //end作为中止符 
+	char x;                                             //x为操作符 
+	bstnode*t,*s;
+	printf("-------------操作选项-----------\n");       //建立菜单 
+	printf("1:读入文本建立二叉排序树\n");
+    printf("2:输入停用词删除节点\n");
+    printf("3:二叉树中序遍历输出\n");
+	printf("4:查询单词并输出频次\n");
+	printf("5:退出程序\n");
+    printf("--------------------------------\n");
+    while(1)                                            //不断执行菜单内容直至退出程序 
+    {
+    	printf("输入数字选择执行操作：");
+		scanf("%c",&x);                                 //输入操作种类 
+		fflush(stdin);                                  //清除输入缓冲流中的回车符（scanf所产生） 
+		if(x=='5')  break;                              //程序退出 
+		switch(x)                                       //判断操作类型 
+		{  
+		    case '1':t=CREATEBST();               break;//读入文本建立二叉排序树
+			case '2':while(1)                           //连续删除停用词，直到输入end 
+			       {
+			       	    printf("输入停用词（end为终止符）:");
+			       	    gets(word);                      
+			       	    if(strcmp(word,e)==0)   break;  //终止删除停用词，返回菜单 
+			       	    else
+						{
+						    s=Search(t,word);           //查找停用词地址 
+			                t=Deletenode(t,s);          //删除停用词 
+						}
+			        }                           break;                              
+		    case '3':inorder(t);                break;  //中序遍历输出 
+		    case '4':while(1)                           //连续查询，直至输入end 
+		           {
+			            printf("输入查询单词（end为终止符）："); 
+			            gets(word);   
+						if(strcmp(word,e)==0)   break;  //终止查询，返回菜单 
+			       	    else PutSearch(t,word);         //查询单词并输出频次
+				   }                            break;
+		    default:printf("输入错误请重输\n"); break;  //提示输入的是非法操作符 
+		}
+	 } 	
+	 return 0;
+} 
